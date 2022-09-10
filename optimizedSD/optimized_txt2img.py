@@ -32,6 +32,14 @@ def load_model_from_config(ckpt, verbose=False):
     sd = pl_sd["state_dict"]
     return sd
 
+def patch_conv(klass):
+	init = klass.__init__
+	def __init__(self, *args, **kwargs):
+		return init(self, *args, **kwargs, padding_mode='circular')
+	klass.__init__ = __init__
+
+for klass in [torch.nn.Conv2d, torch.nn.ConvTranspose2d]:
+	patch_conv(klass)
 
 config = "optimizedSD/v1-inference.yaml"
 ckpt = "models/ldm/stable-diffusion-v1/model.ckpt"
