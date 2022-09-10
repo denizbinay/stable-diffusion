@@ -142,7 +142,7 @@ parser.add_argument(
 parser.add_argument(
     "--seed",
     type=int,
-    default=random.randint(0,4294967295),,
+    default=random.randint(0,4294967295),
     help="the seed (for reproducible sampling)",
 )
 parser.add_argument(
