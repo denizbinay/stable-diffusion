@@ -16,6 +16,7 @@ from ldm.util import instantiate_from_config
 from optimUtils import split_weighted_subprompts, logger
 from transformers import logging
 from bson.objectid import ObjectId
+import random
 # from samplers import CompVisDenoiser
 logging.set_verbosity_error()
 
@@ -141,7 +142,7 @@ parser.add_argument(
 parser.add_argument(
     "--seed",
     type=int,
-    default=None,
+    default=random.randint(0,4294967295),,
     help="the seed (for reproducible sampling)",
 )
 parser.add_argument(
