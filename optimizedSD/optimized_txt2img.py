@@ -17,6 +17,7 @@ from optimUtils import split_weighted_subprompts, logger
 from transformers import logging
 from bson.objectid import ObjectId
 import random
+from libxmp import XMPFiles, consts, XMPMeta 
 # from samplers import CompVisDenoiser
 logging.set_verbosity_error()
 
@@ -25,6 +26,20 @@ def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
 
+def add_metadata(filename, opt):
+    if opt.skip_metadata:
+        return
+
+    metadata = str(opt)
+
+    xmpfile = XMPFiles(file_path=filename, open_forupdate=True)
+    xmp = xmpfile.get_xmp()
+    if xmp is None:
+        xmp = XMPMeta()
+    xmp.append_array_item(consts.XMP_NS_DC, 'description', metadata,
+        {'prop_array_is_ordered':True, 'prop_value_is_array':True})
+    xmpfile.put_xmp(xmp)
+    xmpfile.close_file()
 
 def load_model_from_config(ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
@@ -319,9 +334,9 @@ with torch.no_grad():
                     x_samples_ddim = modelFS.decode_first_stage(samples_ddim[i].unsqueeze(0))
                     x_sample = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                     x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
-                    Image.fromarray(x_sample.astype(np.uint8)).save(
-                        os.path.join(sample_path, str(ObjectId()) + "." + opt.format)
-                    )
+                    filename = os.path.join(sample_path, str(ObjectId()) + "." + opt.format)
+                    Image.fromarray(x_sample.astype(np.uint8)).save(filename)
+                    add_metadata(filename, opt)
                     seeds += str(opt.seed) + ","
                     opt.seed += 1
                     base_count += 1
