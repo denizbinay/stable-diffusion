@@ -28,6 +28,7 @@ def chunk(it, size):
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
 
+
 def add_metadata(filename, opt):
     SKIP_OPT_KEYS = ['outdir']
     safe_opts = {}
