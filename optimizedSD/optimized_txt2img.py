@@ -17,7 +17,9 @@ from optimUtils import split_weighted_subprompts, logger
 from transformers import logging
 from bson.objectid import ObjectId
 import random
-from libxmp import XMPFiles, consts, XMPMeta 
+import tinyxmp
+import xml.dom.minidom
+import json
 # from samplers import CompVisDenoiser
 logging.set_verbosity_error()
 
@@ -30,16 +32,32 @@ def add_metadata(filename, opt):
     if opt.skip_metadata:
         return
 
-    metadata = str(opt)
+    SKIP_OPT_KEYS = ['outdir']
+    safe_opts = {}
+    for k, v in vars(opt).items():
+        if k in SKIP_OPT_KEYS:
+            continue
+        safe_opts[k] = v
+    metadata = json.dumps(safe_opts)
 
-    xmpfile = XMPFiles(file_path=filename, open_forupdate=True)
-    xmp = xmpfile.get_xmp()
-    if xmp is None:
-        xmp = XMPMeta()
-    xmp.append_array_item(consts.XMP_NS_DC, 'description', metadata,
-        {'prop_array_is_ordered':True, 'prop_value_is_array':True})
-    xmpfile.put_xmp(xmp)
-    xmpfile.close_file()
+    xmp_file = tinyxmp.Metadata.load(filename)
+    # Since we just generated this file, we know there's no meaningful XMP data in it.
+    # So we create an empty template.
+    xmp = '''
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about="" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:description>
+      <rdf:Seq><rdf:li></rdf:li>
+      </rdf:Seq>
+    </dc:description>
+  </rdf:Description>
+</rdf:RDF>'''
+
+    doc = xml.dom.minidom.parseString(xmp)
+    e = doc.getElementsByTagName("rdf:li")[0]
+    textnode = doc.createTextNode(metadata)
+    e.appendChild(textnode)
+    xmp_file.write_xmp(doc.childNodes[0].toxml().encode("utf-8"))
 
 def load_model_from_config(ckpt, verbose=False):
     print(f"Loading model from {ckpt}")
