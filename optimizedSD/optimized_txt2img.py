@@ -360,7 +360,7 @@ with torch.no_grad():
 
                     # Send result to api
                     multipart_form_data = {'image': open(filename, 'rb')}
-                    response = requests.post("http://23.88.42.82:3000/api/v1/images", headers={'enctype':'multipart/form-data'}, files=multipart_form_data)
+                    response = requests.post("https://backend.patty-pattern.com:442/api/v1/images", headers={'enctype':'multipart/form-data'}, files=multipart_form_data)
 
                 if opt.device != "cpu":
                     mem = torch.cuda.memory_allocated() / 1e6
